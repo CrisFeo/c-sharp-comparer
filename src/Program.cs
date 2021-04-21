@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using AgileObjects.ReadableExpressions;
 
 static class Program {
 
@@ -23,6 +24,14 @@ static class Program {
       Console.WriteLine($"FAIL {title}");
       throw;
     }
+  }
+
+  static void PrintSource<T>() {
+    var source = DeepCompare<T>.expression.ToReadableString(c => c
+      .UseExplicitTypeNames
+      .ShowLambdaParameterTypes
+    ).Replace(Environment.NewLine, "  "+ Environment.NewLine);
+    Console.WriteLine($"comparer for {typeof(T).Name}\n  {source}");
   }
 
   static void Main(string[] args) {
@@ -61,6 +70,8 @@ static class Program {
     Case<Thing>(a, b, false);
     b.c = null;
     Case<Thing>(a, b, false);
+    PrintSource<Dictionary<string, int>>();
+    PrintSource<Thing>();
   }
 
 }

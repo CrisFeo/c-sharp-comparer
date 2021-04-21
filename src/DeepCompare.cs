@@ -3,9 +3,15 @@ using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using AgileObjects.ReadableExpressions;
 
 public static class DeepCompare<T> {
+
+  // Internal vars
+  //////////////////////
+
+#if DEBUG
+  internal static Expression expression;
+#endif
 
   // Public vars
   //////////////////////
@@ -16,7 +22,17 @@ public static class DeepCompare<T> {
   //////////////////////
 
   static DeepCompare() {
-    Comparer = Create();
+    var type = typeof(T);
+    var a = Expression.Parameter(type, "a");
+    var b = Expression.Parameter(type, "b");
+    var lambda = Expression.Lambda<Func<T, T, bool>>(
+      Compare(type, a, b),
+      new ParameterExpression[] { a, b }
+    );
+#if DEBUG
+    expression = lambda;
+#endif
+    Comparer = lambda.Compile();
   }
 
   // Public methods
@@ -26,23 +42,6 @@ public static class DeepCompare<T> {
 
   // Internal methods
   //////////////////////
-
-  static Func<T, T, bool> Create() {
-    var type = typeof(T);
-    var a = Expression.Parameter(type, "a");
-    var b = Expression.Parameter(type, "b");
-    var expression = Compare(type, a, b);
-    var lambda = Expression.Lambda<Func<T, T, bool>>(
-      expression,
-      new ParameterExpression[] { a, b }
-    );
-    var source = lambda.ToReadableString(c => c
-      .UseExplicitTypeNames
-      .ShowLambdaParameterTypes
-    );
-    //Console.WriteLine($"generated comparer for {type.Name}\n  {source.Replace("\r\n", "  \n")}");
-    return lambda.Compile();
-  }
 
   static Type GetEnumerableType(Type type) {
     if (type.IsInterface && type.GetGenericTypeDefinition() == typeof(IEnumerable<>)) {
